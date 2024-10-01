@@ -16,13 +16,14 @@ from ament_index_python.packages import get_package_share_directory
 class PosePublisher(Node):
     def __init__(self):
         super().__init__('pose_publisher')
+
         self.publisher_ = self.create_publisher(PoseStamped, '/detected_dock_pose', 10)
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         timer_period = 0.1  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
 
-        # Initially, don't publish until triggered by feedback
+        # Don't publish dock pose until triggered by feedback
         self.publish_pose = False
         # Subscription to trigger publishing
         self.start_publishing_subscription = self.create_subscription(
@@ -32,6 +33,7 @@ class PosePublisher(Node):
             10
         )
         self.get_logger().info('PosePublisher node has been started.')
+
         # Load the dock coordinates from the YAML file
         self.load_dock_pose()
 
@@ -71,7 +73,7 @@ class PosePublisher(Node):
             self.publish_pose = False
 
     def timer_callback(self):
-        """Publishes the transformed pose if the INITIAL_PERCEPTION state has been reached."""
+        """Publishes the transformed pose if the staging pose has been reached."""
         if self.publish_pose:
             # Define the pose in the map frame
             pose_in_map = tf2_geometry_msgs.PoseStamped()
@@ -103,7 +105,6 @@ class PosePublisher(Node):
                 final_pose_stamped.pose.orientation.w = 0.0
                 final_pose_stamped.pose.orientation.z = 1.0
                 self.publisher_.publish(final_pose_stamped)
-                # self.get_logger().info(f'Published PoseStamped in odom frame: {final_pose_stamped.pose}')
 
             except Exception as e:
                 self.get_logger().error(f'Error transforming pose: {e}')

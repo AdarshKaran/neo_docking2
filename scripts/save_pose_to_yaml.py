@@ -8,6 +8,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from neo_srvs2.srv import SaveDockPose
 
+
 # Custom list class for inline lists
 class InlineList(list):
     pass
@@ -19,10 +20,11 @@ def represent_inline_list(dumper, data):
 # Register the custom representer
 yaml.add_representer(InlineList, represent_inline_list)
 
+
 class SaveDockPoseToYaml(Node):
     def __init__(self):
         super().__init__('save_dock_pose_to_yaml_node')
-        
+
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         self.create_service(SaveDockPose, "save_dock_pose_to_yaml", self.save_pose)
@@ -46,19 +48,20 @@ class SaveDockPoseToYaml(Node):
                 return response
 
             transform_stamped = self.tf_buffer.lookup_transform('map', 'base_link', rclpy.time.Time(), timeout=rclpy.duration.Duration(seconds=0.2))
-            # Use InlineList for the pose to enforce flow style
+            # Use a custom class InlineList for the pose to ensure proper format as expected by the Docking Server
             pose_list = InlineList([
                 transform_stamped.transform.translation.x,
                 transform_stamped.transform.translation.y,
                 transform_stamped.transform.translation.z
             ])
+
             # Store the pose data in a dictionary with the desired format
             pose_data = {
                 'type': dock_type,
                 'frame': dock_frame,
                 'pose': pose_list
             }
-            
+
             # Add or update the dock pose
             self.dock_poses[dock_id] = pose_data
 
