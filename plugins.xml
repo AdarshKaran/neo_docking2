@@ -1,0 +1,7 @@
+<class_libraries>
+  <library path="neo_charging_dock">
+    <class type="neo_docking2::NeoDock"  base_class_type="opennav_docking_core::ChargingDock">
+      <description>A custom simple charging dock plugin.</description>
+    </class>
+  </library>
+</class_libraries>
