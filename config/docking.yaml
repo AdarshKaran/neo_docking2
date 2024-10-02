@@ -37,9 +37,9 @@ docking_server:
     dock_database: ''
 
     controller:
-      k_phi: 10.0
-      k_delta: 10.0
-      v_linear_min: 0.05
-      v_linear_max: 0.15
-      max_angular_velocity: 0.7
-
+      k_phi: 15.0
+      k_delta: 15.0
+      v_linear_min: 0.1
+      v_linear_max: 0.25
+      max_angular_velocity: 0.3
+      slowdown_radius: 0.5

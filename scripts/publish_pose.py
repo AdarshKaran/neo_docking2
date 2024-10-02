@@ -11,7 +11,8 @@ from opennav_docking_msgs.action import DockRobot
 import os
 import yaml
 from ament_index_python.packages import get_package_share_directory
-
+import tf_transformations
+import math
 
 class PosePublisher(Node):
     def __init__(self):
@@ -37,6 +38,7 @@ class PosePublisher(Node):
         # Load the dock coordinates from the YAML file
         self.load_dock_pose()
 
+
     def load_dock_pose(self):
         """Load the dock pose from the YAML file."""
         try:
@@ -44,24 +46,39 @@ class PosePublisher(Node):
             yaml_file = os.path.join(package_share_directory, "config", "dock_database.yaml")
             with open(yaml_file, 'r') as file:
                 yaml_content = yaml.safe_load(file)
-                dock_id = 'dock1'
+                dock_id = 'dock1'  # Adjust as needed
                 if 'docks' in yaml_content and dock_id in yaml_content['docks']:
                     dock_data = yaml_content['docks'][dock_id]
                     pose_list = dock_data['pose']
+                    orientation_list = dock_data.get('orientation', [0.0, 0.0, 0.0, 1.0])
+
                     self.dock_pose_x = pose_list[0]
                     self.dock_pose_y = pose_list[1]
-                    self.dock_pose_z = 0.0
-                    self.get_logger().info(f"Loaded dock pose: x={self.dock_pose_x}, y={self.dock_pose_y}, z={self.dock_pose_z}")
+                    self.dock_pose_z = pose_list[2]
+
+                    self.dock_orientation_x = orientation_list[0]
+                    self.dock_orientation_y = orientation_list[1]
+                    self.dock_orientation_z = orientation_list[2]
+                    self.dock_orientation_w = orientation_list[3]
+
+                    self.get_logger().info(f"Loaded dock pose: position=({self.dock_pose_x}, {self.dock_pose_y}, {self.dock_pose_z}), "
+                                           f"orientation=({self.dock_orientation_x}, {self.dock_orientation_y}, {self.dock_orientation_z}, {self.dock_orientation_w})")
                 else:
                     self.get_logger().error(f"Dock ID '{dock_id}' not found in the YAML file.")
-                    self.dock_pose_x = 0.0
-                    self.dock_pose_y = 0.0
-                    self.dock_pose_z = 0.0
+                    self.set_default_pose()
         except Exception as e:
             self.get_logger().error(f"Error loading dock pose from YAML file: {e}")
-            self.dock_pose_x = 0.0
-            self.dock_pose_y = 0.0
-            self.dock_pose_z = 0.0
+            self.set_default_pose()
+
+    def set_default_pose(self):
+        """Set default pose values."""
+        self.dock_pose_x = 0.0
+        self.dock_pose_y = 0.0
+        self.dock_pose_z = 0.0
+        self.dock_orientation_x = 0.0
+        self.dock_orientation_y = 0.0
+        self.dock_orientation_z = 0.0
+        self.dock_orientation_w = 1.0
 
     def start_publishing_callback(self, msg):
         """Callback when receiving trigger to start publishing."""
@@ -84,6 +101,33 @@ class PosePublisher(Node):
             pose_in_map.pose.position.y = self.dock_pose_y
             pose_in_map.pose.position.z = self.dock_pose_z
 
+            # Load the saved orientation
+            original_quaternion = (
+                self.dock_orientation_x,
+                self.dock_orientation_y,
+                self.dock_orientation_z,
+                self.dock_orientation_w
+            )
+
+            # Convert to Euler angles
+            roll, pitch, yaw = tf_transformations.euler_from_quaternion(original_quaternion)
+
+            # Add 180 degrees (π radians) to yaw
+            import math
+            yaw += math.pi
+
+            # Normalize yaw to [-π, π]
+            yaw = (yaw + math.pi) % (2 * math.pi) - math.pi
+
+            # Compute new quaternion with adjusted yaw
+            adjusted_quaternion = tf_transformations.quaternion_from_euler(roll, pitch, yaw)
+
+            # Assign the adjusted quaternion to the pose
+            pose_in_map.pose.orientation.x = adjusted_quaternion[0]
+            pose_in_map.pose.orientation.y = adjusted_quaternion[1]
+            pose_in_map.pose.orientation.z = adjusted_quaternion[2]
+            pose_in_map.pose.orientation.w = adjusted_quaternion[3]
+
             try:
                 # Check if transformation between 'odom' and 'map' is available
                 if not self.tf_buffer.can_transform('odom', 'map', rclpy.time.Time()):
@@ -102,8 +146,6 @@ class PosePublisher(Node):
                 final_pose_stamped.header.stamp = transform_stamped.header.stamp
                 final_pose_stamped.header.frame_id = 'odom'
                 final_pose_stamped.pose = pose_in_odom
-                final_pose_stamped.pose.orientation.w = 0.0
-                final_pose_stamped.pose.orientation.z = 1.0
                 self.publisher_.publish(final_pose_stamped)
 
             except Exception as e:
