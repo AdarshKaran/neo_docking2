@@ -38,6 +38,26 @@ class PosePublisher(Node):
         # Load the dock coordinates from the YAML file
         self.load_dock_pose()
 
+        # Load the saved orientation
+        original_quaternion = (
+            self.dock_orientation_x,
+            self.dock_orientation_y,
+            self.dock_orientation_z,
+            self.dock_orientation_w
+        )
+
+        # Convert to Euler angles
+        roll, pitch, yaw = tf_transformations.euler_from_quaternion(original_quaternion)
+
+        # Add 180 degrees (π radians) to yaw
+        yaw += math.pi
+
+        # Normalize yaw to [-π, π]
+        yaw = (yaw + math.pi) % (2 * math.pi) - math.pi
+
+        # Compute new quaternion with adjusted yaw
+        self.adjusted_quaternion = tf_transformations.quaternion_from_euler(roll, pitch, yaw)
+
 
     def load_dock_pose(self):
         """Load the dock pose from the YAML file."""
@@ -101,32 +121,11 @@ class PosePublisher(Node):
             pose_in_map.pose.position.y = self.dock_pose_y
             pose_in_map.pose.position.z = self.dock_pose_z
 
-            # Load the saved orientation
-            original_quaternion = (
-                self.dock_orientation_x,
-                self.dock_orientation_y,
-                self.dock_orientation_z,
-                self.dock_orientation_w
-            )
-
-            # Convert to Euler angles
-            roll, pitch, yaw = tf_transformations.euler_from_quaternion(original_quaternion)
-
-            # Add 180 degrees (π radians) to yaw
-            import math
-            yaw += math.pi
-
-            # Normalize yaw to [-π, π]
-            yaw = (yaw + math.pi) % (2 * math.pi) - math.pi
-
-            # Compute new quaternion with adjusted yaw
-            adjusted_quaternion = tf_transformations.quaternion_from_euler(roll, pitch, yaw)
-
             # Assign the adjusted quaternion to the pose
-            pose_in_map.pose.orientation.x = adjusted_quaternion[0]
-            pose_in_map.pose.orientation.y = adjusted_quaternion[1]
-            pose_in_map.pose.orientation.z = adjusted_quaternion[2]
-            pose_in_map.pose.orientation.w = adjusted_quaternion[3]
+            pose_in_map.pose.orientation.x = self.adjusted_quaternion[0]
+            pose_in_map.pose.orientation.y = self.adjusted_quaternion[1]
+            pose_in_map.pose.orientation.z = self.adjusted_quaternion[2]
+            pose_in_map.pose.orientation.w = self.adjusted_quaternion[3]
 
             try:
                 # Check if transformation between 'odom' and 'map' is available
