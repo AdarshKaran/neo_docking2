@@ -10,6 +10,8 @@ Before proceeding, ensure that you have cloned the following repositories into y
 
    1. Clone the neo_docking2 repository:<br>
       `git clone -b update/neo_docking_with_opennav_docking_server https://github.com/AdarshKaran/neo_docking2.git`
+   2. Clone the neo_srvs2 repository:<br>
+      `git clone -b added_service/save_dock_pose https://github.com/AdarshKaran/neo_srvs2.git`
    3. Clone the opennav_docking repository:<br>
       `git clone -b humble_fix/neo_dock https://github.com/AdarshKaran/opennav_docking.git`<br>
       
