@@ -100,8 +100,7 @@ void NeoDock::configure(
     // Setup filter
     double filter_coef;
     node_->get_parameter(name + ".filter_coef", filter_coef);
-    filter_ = std::make_unique<PoseFilter>(filter_coef, external_detection_timeout_);
-
+    filter_ = std::make_unique<opennav_docking::PoseFilter>(filter_coef, external_detection_timeout_);
     if (use_battery_status_) {
         battery_sub_ = node_->create_subscription<sensor_msgs::msg::BatteryState>(
         "battery_state", 1,

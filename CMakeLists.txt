@@ -26,8 +26,7 @@ find_package(pluginlib REQUIRED)
 
 # Build the C++ node
 add_executable(neo_docking2 src/neo_docking.cpp)
-# Add libraries for pose_filter and neo_charging_dock
-add_library(pose_filter SHARED src/pose_filter.cpp)
+# Add libraries for neo_charging_dock
 add_library(neo_charging_dock SHARED src/neo_charging_dock.cpp)
 
 # Set common dependencies
@@ -48,27 +47,15 @@ set(COMMON_DEPENDENCIES
 )
 
 # Link common dependencies to the libraries
-ament_target_dependencies(pose_filter ${COMMON_DEPENDENCIES})
 ament_target_dependencies(neo_charging_dock ${COMMON_DEPENDENCIES})
 
-# Link pose_filter to neo_charging_dock
-target_link_libraries(neo_charging_dock pose_filter)
-
-# Link neo_charging_dock and pose_filter to the executable
 ament_target_dependencies(neo_docking2
   ${COMMON_DEPENDENCIES}
   rclpy
   std_srvs
   neo_srvs2
 )
-target_link_libraries(neo_docking2 neo_charging_dock pose_filter)
 pluginlib_export_plugin_description_file(opennav_docking_core plugins.xml)
-
-# Set include directories and compile features for pose_filter
-target_include_directories(pose_filter PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_features(pose_filter PUBLIC c_std_99 cxx_std_17)
 
 # Set include directories and compile features for neo_charging_dock
 target_include_directories(neo_charging_dock PUBLIC
@@ -83,7 +70,7 @@ target_include_directories(neo_docking2 PUBLIC
 target_compile_features(neo_docking2 PUBLIC c_std_99 cxx_std_17)
 
 # Install executables and libraries
-install(TARGETS neo_docking2 pose_filter neo_charging_dock
+install(TARGETS neo_docking2 neo_charging_dock
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch

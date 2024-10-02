@@ -28,7 +28,7 @@
 #include "tf2/utils.h"
 
 #include "opennav_docking_core/charging_dock.hpp"
-#include "neo_docking2/pose_filter.hpp"
+#include "opennav_docking/pose_filter.hpp"
 
 namespace neo_docking2
 {
@@ -153,7 +153,7 @@ protected:
   double external_detection_translation_y_;
 
   // Filtering of detected poses
-  std::shared_ptr<PoseFilter> filter_;
+  std::shared_ptr<opennav_docking::PoseFilter> filter_;
 
   // Threshold that battery current must exceed to be "charging" (in Amperes)
   int charging_threshold_;

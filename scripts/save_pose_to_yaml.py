@@ -33,6 +33,33 @@ class SaveDockPoseToYaml(Node):
         package_share_directory = get_package_share_directory('neo_docking2')
         self.output_file = os.path.join(package_share_directory, "config", "dock_database.yaml")
 
+        # Load existing docks if they exist, else create a new config file
+        self.load_dock_poses()
+
+    def load_dock_poses(self):
+        if os.path.exists(self.output_file):
+            try:
+                with open(self.output_file, 'r') as file:
+                    data = yaml.safe_load(file)
+                    if data and 'docks' in data:
+                        self.dock_poses = data['docks']
+                        # Convert existing pose lists to InlineList
+                        for dock_id, dock_data in self.dock_poses.items():
+                            pose = dock_data.get('pose', [])
+                            if isinstance(pose, list):
+                                dock_data['pose'] = InlineList(pose)
+                        self.get_logger().info("Existing dock poses loaded from YAML file.")
+                    else:
+                        self.dock_poses = {}
+                        self.get_logger().info("No existing dock poses found in YAML file.")
+            except Exception as e:
+                self.get_logger().error(f"Error reading YAML file: {str(e)}")
+                self.dock_poses = {}
+        else:
+            self.dock_poses = {}
+            self.get_logger().info("Dock database YAML file does not exist. Starting with empty dock poses.")
+
+
     def save_pose(self, request, response):
         dock_id = request.dock_id
         dock_type = request.dock_type
