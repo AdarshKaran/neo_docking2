@@ -4,13 +4,18 @@ This repository contains the necessary files and configurations to simulate and 
 
 ## Installation
 
-### Clone the Required Repositories
+### Prerequisites
 
-Make sure to clone the following repositories into your ROS2 workspace:
+Before proceeding, ensure that you have cloned the following repositories into your ROS2 workspace:
 
-   `git clone -b update/neo_docking_with_opennav_docking_server https://github.com/AdarshKaran/neo_docking2.git`
+   1. Clone the neo_docking2 repository:<br>
+      `git clone -b update/neo_docking_with_opennav_docking_server https://github.com/AdarshKaran/neo_docking2.git`
+   3. Clone the opennav_docking repository:<br>
+      `git clone -b humble_fix/neo_dock https://github.com/AdarshKaran/opennav_docking.git`<br>
+      
+If you haven't installed the Neobotix packages, please follow the installation guide here: [https://neobotix-docs.de/ros/ros2/installation.html]<br>
 
-   `git clone -b humble_fix/neo_dock https://github.com/AdarshKaran/opennav_docking.git`
+Once you have the neo_simulation2, neo_nav2_bringup, neo_docking2, and opennav_docking packages installed, proceed to the next steps.
 
 ## Running the Simulation
 
@@ -52,33 +57,28 @@ This will save a YAML file named `dock_database.yaml` in the configuration direc
 
 Example position with dock pose in neo_workshop world:
 
-<code>docks:
+```
+docks:
   dock1:
     frame: map
     pose: [-5.094569517241989, -2.8147842123288074, -0.010333245175675873]
     type: simple_dock
-    </code>
+```
 
 ## Docking and Undocking
 
-To trigger the docking action:
-
-Call the following action command, providing the dock_id that matches the saved dock in the `dock_database.yaml`:
+To trigger the docking action, all the following action command. Provide the dock_id that matches the saved dock in the `dock_database.yaml`:
 
    `ros2 action send_goal /dock_robot opennav_docking_msgs/action/DockRobot "{'dock_id': 'dock1'}"`
 
-The docking server will retry up to 3 times in case of failure.
+The docking server will retry up to 3 times in case of failure. When the robot reaches the staging pose, the static dock pose will be published.
+The graceful controller is currently tuned as follows:
 
-When the robot reaches the staging pose, the static dock pose will be published.
-
-The controller is currently tuned with a high graceful controller setting:
-
-<code>controller:
+```
+controller:
   k_phi: 10.0
   k_delta: 10.0
-  </code>
-
-This ensures proper path control.
+```
 
 To undock the robot:
 
