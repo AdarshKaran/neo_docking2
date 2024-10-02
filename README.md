@@ -14,6 +14,9 @@ Before proceeding, ensure that you have cloned the following repositories into y
       `git clone -b added_service/save_dock_pose https://github.com/AdarshKaran/neo_srvs2.git`
    3. Clone the opennav_docking repository:<br>
       `git clone -b humble_fix/neo_dock https://github.com/AdarshKaran/opennav_docking.git`<br>
+   4. Install the required transformations package:<br>
+      `sudo apt install ros-humble-tf-transformations`
+
       
 If you haven't installed the Neobotix packages, please follow the installation guide here: [https://neobotix-docs.de/ros/ros2/installation.html]<br>
 
