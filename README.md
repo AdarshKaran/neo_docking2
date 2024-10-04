@@ -42,13 +42,13 @@ Once you have the neo_simulation2, neo_nav2_bringup, neo_docking2, and opennav_d
 
    This command brings up RViz for visualization purposes:
 
-   `ros2 launch neo_nav2_bringup rviz_launch.py`
+   `ros2 launch neo_nav2_bringup rviz_launch.py rviz_config:=/home/adarsh/ros2_humble_neobotix_workspace/src/neo_docking2/rviz/single_robot_docking.rviz`
 
 4. **Launch the Docking Server:**
 
    This command launches the docking server for the MPO 700:
 
-   `ros2 launch neo_docking2 docking_launch.py`
+   `ros2 launch neo_docking2 neo_docking.launch.py`
 
    - The docking server includes a custom pose publisher that triggers when the robot reaches the staging pose. It reads the dock pose from the `dock_database.yaml` file.
 
@@ -105,11 +105,11 @@ Make sure the dock_type matches and sufficient undocking time is provided.
 
 - Launch RViz:
 
-   `ros2 launch neo_nav2_bringup rviz_launch.py`
+   `ros2 launch neo_nav2_bringup rviz_launch.py rviz_config:=/home/adarsh/ros2_humble_neobotix_workspace/src/neo_docking2/rviz/single_robot_docking.rviz`
 
 - Launch docking server:
 
-   `ros2 launch neo_docking2 docking_launch.py`
+   `ros2 launch neo_docking2 neo_docking.launch.py`
 
 - Save dock pose to YAML:
 

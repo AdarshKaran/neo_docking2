@@ -157,6 +157,8 @@ geometry_msgs::msg::PoseStamped NeoDock::getStagingPose(
 
     // Compute the staging pose with given offsets
     const double yaw = tf2::getYaw(pose.orientation);
+    RCLCPP_INFO(node_->get_logger(), "Yaw value of staging_pose is %f", yaw);
+
     geometry_msgs::msg::PoseStamped staging_pose;
     staging_pose.header.frame_id = frame;
     staging_pose.header.stamp = node_->now();

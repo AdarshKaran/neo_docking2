@@ -7,19 +7,24 @@ import yaml
 import os
 from ament_index_python.packages import get_package_share_directory
 from neo_srvs2.srv import SaveDockPose
+import tf_transformations
+import math
 
-# Custom list class for inline lists
+
 class InlineList(list):
+    """Custom list class for inline lists."""
     pass
 
-# Custom representer to dump InlineList in flow style
 def represent_inline_list(dumper, data):
+    """Custom representer to dump InlineList in flow style."""
     return dumper.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=True)
 
 # Register the custom representer
 yaml.add_representer(InlineList, represent_inline_list)
 
+
 class SaveDockPoseToYaml(Node):
+    """Node to save the dock pose to a YAML file."""
     def __init__(self):
         super().__init__('save_dock_pose_to_yaml_node')
 
@@ -38,6 +43,7 @@ class SaveDockPoseToYaml(Node):
         self.load_dock_poses()
 
     def load_dock_poses(self):
+        """Load existing dock poses from the YAML file."""
         if os.path.exists(self.output_file):
             try:
                 with open(self.output_file, 'r') as file:
@@ -46,13 +52,10 @@ class SaveDockPoseToYaml(Node):
                         self.dock_poses = data['docks']
                         # Convert existing pose lists to InlineList
                         for dock_id, dock_data in self.dock_poses.items():
-                            # Convert position and orientation to InlineList
+                            # Convert position to InlineList
                             pose = dock_data.get('pose', [])
-                            orientation = dock_data.get('orientation', [])
                             if isinstance(pose, list):
                                 dock_data['pose'] = InlineList(pose)
-                            if isinstance(orientation, list):
-                                dock_data['orientation'] = InlineList(orientation)
                         self.get_logger().info("Existing dock poses loaded from YAML file.")
                     else:
                         self.dock_poses = {}
@@ -65,6 +68,7 @@ class SaveDockPoseToYaml(Node):
             self.get_logger().info("Dock database YAML file does not exist. Starting with empty dock poses.")
 
     def save_pose(self, request, response):
+        """Service callback to save the current pose to YAML."""
         dock_id = request.dock_id
         dock_type = request.dock_type
         dock_frame = request.dock_frame
@@ -79,26 +83,29 @@ class SaveDockPoseToYaml(Node):
             transform_stamped = self.tf_buffer.lookup_transform(
                 'map', 'base_link', rclpy.time.Time(), timeout=rclpy.duration.Duration(seconds=0.2))
 
-            # Use a custom class InlineList for the pose and orientation
-            pose_list = InlineList([
-                transform_stamped.transform.translation.x,
-                transform_stamped.transform.translation.y,
-                transform_stamped.transform.translation.z
-            ])
+            x = transform_stamped.transform.translation.x
+            y = transform_stamped.transform.translation.y
 
-            orientation_list = InlineList([
+            # Convert quaternion to Euler angles to get yaw (theta)
+            quaternion = (
                 transform_stamped.transform.rotation.x,
                 transform_stamped.transform.rotation.y,
                 transform_stamped.transform.rotation.z,
                 transform_stamped.transform.rotation.w
-            ])
+            )
+            roll, pitch, yaw = tf_transformations.euler_from_quaternion(quaternion)
+            theta = yaw
+
+            # Normalize theta to [-π, π]
+            theta = (theta + math.pi) % (2 * math.pi) - math.pi
+
+            pose_list = InlineList([x, y, theta])
 
             # Store the pose data in a dictionary with the desired format
             pose_data = {
                 'type': dock_type,
                 'frame': dock_frame,
-                'pose': pose_list,
-                'orientation': orientation_list
+                'pose': pose_list
             }
 
             # Add or update the dock pose
@@ -118,6 +125,7 @@ class SaveDockPoseToYaml(Node):
             return response
 
     def write_to_yaml(self):
+        """Save the dock to yaml."""
         try:
             # Write the dock poses to the YAML file in the desired format
             with open(self.output_file, 'w') as file:
